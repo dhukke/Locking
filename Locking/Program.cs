@@ -73,7 +73,7 @@ app.MapDelete("/users-pessimistic/{userId:guid}", async (DataContext dataContext
     }
     catch (Exception ex)
     {
-        var logger = loggerFactory.CreateLogger("ApiIntegrationLog.Api");
+        var logger = loggerFactory.CreateLogger("Locking");
         logger.LogInformation("Error removing user with id: {@UserId}. Error message: {@ErrorMessage}", userId, ex.Message);
 
         transaction.Rollback();
@@ -83,7 +83,7 @@ app.MapDelete("/users-pessimistic/{userId:guid}", async (DataContext dataContext
 })
 .WithName("DeleteUserPessimisticLocking");
 
-// good choice when is not expected a large number of colisions
+// optimistic locking is a good choice when a large number of collisions are not expected
 app.MapDelete("/users-optimistic/{userId:guid}", async (DataContext dataContext, ILoggerFactory loggerFactory, Guid userId) =>
 {
     var user = dataContext.Users.FirstOrDefault(x => x.Id == userId);
@@ -101,7 +101,7 @@ app.MapDelete("/users-optimistic/{userId:guid}", async (DataContext dataContext,
     }
     catch (DbUpdateConcurrencyException ex)
     {
-        var logger = loggerFactory.CreateLogger("ApiIntegrationLog.Api");
+        var logger = loggerFactory.CreateLogger("Locking");
         logger.LogInformation("Error removing user with id: {@UserId}. Error message: {@ErrorMessage}", userId, ex.Message);
 
         return Results.Conflict();
@@ -110,6 +110,5 @@ app.MapDelete("/users-optimistic/{userId:guid}", async (DataContext dataContext,
     return Results.NoContent();
 })
 .WithName("DeleteUserOptimisticLocking");
-
 
 app.Run();
